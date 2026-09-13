@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse
 
 from app.db import Base, engine
 from app.routes.alerts import router as alerts_router
+from app.routes.attack import router as attack_router
 from app.routes.demo import router as demo_router
 from app.routes.events import router as events_router
 from app.routes.evidence import router as evidence_router
@@ -18,6 +19,7 @@ app.include_router(alerts_router)
 app.include_router(investigations_router)
 app.include_router(evidence_router)
 app.include_router(intelligence_router)
+app.include_router(attack_router)
 app.include_router(demo_router)
 
 
