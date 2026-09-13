@@ -8,6 +8,7 @@ from app.routes.alerts import router as alerts_router
 from app.routes.demo import router as demo_router
 from app.routes.events import router as events_router
 from app.routes.evidence import router as evidence_router
+from app.routes.intelligence import router as intelligence_router
 from app.routes.investigations import router as investigations_router
 
 app = FastAPI(title="AI SOC Investigation Engine", version="1.0.0")
@@ -16,6 +17,7 @@ app.include_router(events_router)
 app.include_router(alerts_router)
 app.include_router(investigations_router)
 app.include_router(evidence_router)
+app.include_router(intelligence_router)
 app.include_router(demo_router)
 
 
