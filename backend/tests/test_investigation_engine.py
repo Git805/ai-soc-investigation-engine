@@ -39,4 +39,10 @@ def test_mitre_mappings_are_evidence_linked():
 
 
 def test_indicator_extraction():
-    assert "203.0.113.50" in extract_indicators(generate_demo_events())
+    indicators = extract_indicators(generate_demo_events())
+    assert any(
+        item["indicator"] == "203.0.113.50"
+        and item["type"] == "ip"
+        and "demo-network-001" in item["evidence_refs"]
+        for item in indicators
+    )
