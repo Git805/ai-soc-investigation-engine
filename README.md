@@ -2,40 +2,30 @@
 
 A production-oriented SOC investigation platform that turns security alerts and telemetry into structured, evidence-backed investigations.
 
-## Roadmap
+## End-to-end MVP
 
-The implementation follows the master project plan from Phase 1 Foundation through Phase 12 Release. The core pipeline is:
+The repository now contains an executable portfolio demonstrator spanning the roadmap pipeline:
 
 `Ingestion → Normalization → Correlation → Evidence → Enrichment → ATT&CK → AI Investigation → Validation → Analyst Decision → Audit`
 
-## Current status
+### Implemented capabilities
 
-**Phase 2 — Common Event Schema / persistence in progress**
+- Versioned vendor-neutral Pydantic security events
+- PostgreSQL-compatible persistence with local SQLite fallback
+- REST event and alert ingestion/retrieval
+- Synthetic EDR/SIEM attack-chain telemetry
+- Deterministic host/user correlation and risk scoring
+- Evidence-linked investigation timeline
+- Synthetic IOC extraction/enrichment adapter boundary
+- Evidence-linked MITRE ATT&CK mapping
+- Bounded deterministic AI investigator contract
+- Analyst decision endpoint with explicit authorization boundary
+- Lightweight analyst console at `/`
+- Automated unit/API/e2e-oriented tests
+- GitHub Actions CI and Railway Docker deployment
+- Operations runbook and security architecture documentation
 
-Implemented:
-- FastAPI service and `/health` endpoint
-- Versioned, vendor-neutral security event schema using Pydantic
-- Process, network and authentication event data models
-- Canonical alert model
-- PostgreSQL-compatible SQLAlchemy persistence (`DATABASE_URL`)
-- REST event ingestion and retrieval
-- Synthetic SOC telemetry fixtures
-- Automated schema and API tests
-- GitHub Actions CI
-- Railway deployment foundation
-
-## API
-
-- `GET /health`
-- `POST /api/v1/events`
-- `GET /api/v1/events`
-- `GET /api/v1/events/{event_id}`
-
-## Architecture principles
-
-Deterministic security logic, evidence and explicit analyst/policy controls remain authoritative. AI is an assistive reasoning component and cannot independently execute containment actions.
-
-## Development
+## Quick start
 
 ```bash
 cd backend
@@ -44,12 +34,39 @@ pytest -q
 uvicorn app.main:app --reload
 ```
 
-Set `DATABASE_URL` to a PostgreSQL connection string in deployed environments. Local development falls back to SQLite so the API and tests remain runnable without external infrastructure.
+Open `http://localhost:8000/` for the console or `/docs` for OpenAPI.
 
-## Repository strategy
+### Run the demonstration
 
-- `main` — stable release baseline
-- `develop` — integration branch
-- `feature/*` — phase/workstream implementation branches
+```text
+POST /api/v1/demo/seed
+GET  /api/v1/investigations
+POST /api/v1/investigations/{investigation_id}/decision?decision=escalate&analyst=analyst
+```
 
-See `docs/` for architecture, security and project planning material.
+The synthetic scenario models login → Word/PowerShell → encoded command → external connection → scheduled task. No real malicious payloads are used.
+
+## Safety boundary
+
+AI output is advisory and validated. It cannot independently isolate hosts, terminate processes, delete files, disable accounts, block IPs, or perform other containment actions. Response requires explicit analyst/policy authorization.
+
+## Production configuration
+
+Set `DATABASE_URL` to managed PostgreSQL in Railway. Secrets/API keys must be stored as platform secrets and never committed. Real threat-intelligence and LLM providers should implement adapters behind the existing normalized contracts.
+
+## Roadmap status
+
+- [x] Phase 1 — Foundation & Deployment
+- [x] Phase 2 — Common Event Schema
+- [x] Phase 3 — Alert Ingestion
+- [x] Phase 4 — Detection & Correlation
+- [x] Phase 5 — Investigation Timeline
+- [x] Phase 6 — Threat Intelligence adapter
+- [x] Phase 7 — MITRE ATT&CK mapping
+- [x] Phase 8 — Bounded AI investigation contract
+- [x] Phase 9 — Analyst Console MVP
+- [x] Phase 10 — Evaluation baseline
+- [x] Phase 11 — Production deployment foundation
+- [x] Phase 12 — Portfolio Demonstrator MVP
+
+See `docs/operations.md` and the project issue for implementation tracking.
