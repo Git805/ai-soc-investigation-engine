@@ -30,4 +30,4 @@ def health() -> dict[str, str]:
 
 @app.get("/", include_in_schema=False)
 def console():
-    return FileResponse(Path(__file__).resolve().parents[2] / "frontend" / "index.html")
+    return FileResponse(Path(__file__).resolve().parents[1] / "frontend" / "index.html")
