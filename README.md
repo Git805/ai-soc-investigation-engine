@@ -1,27 +1,72 @@
 # AI-Powered SOC Triage & Investigation Engine
 
-Phase 1 — architecture and secure engineering foundation.
+A production-oriented SOC investigation platform that turns security alerts and telemetry into structured, evidence-backed investigations.
 
-An AI-assisted SOC investigation platform for alert ingestion, telemetry normalization, evidence correlation, enrichment, MITRE ATT&CK mapping, and bounded AI-assisted investigation.
+## End-to-end MVP
 
-## Phase 1
+The repository now contains an executable portfolio demonstrator spanning the roadmap pipeline:
 
-- Architecture and component boundaries
-- Threat model and trust boundaries
-- Functional and non-functional requirements
-- Investigation state model
-- Security model
-- Repository structure and development foundation
-- CI baseline
+`Ingestion → Normalization → Correlation → Evidence → Enrichment → ATT&CK → AI Investigation → Validation → Analyst Decision → Audit`
 
-## Design principle
+### Implemented capabilities
 
-Deterministic security logic remains authoritative. The LLM is an assistive reasoning component and must not independently make containment or detection decisions.
+- Versioned vendor-neutral Pydantic security events
+- PostgreSQL-compatible persistence with local SQLite fallback
+- REST event and alert ingestion/retrieval
+- Synthetic EDR/SIEM attack-chain telemetry
+- Deterministic host/user correlation and risk scoring
+- Evidence-linked investigation timeline
+- Synthetic IOC extraction/enrichment adapter boundary
+- Evidence-linked MITRE ATT&CK mapping
+- Bounded deterministic AI investigator contract
+- Analyst decision endpoint with explicit authorization boundary
+- Lightweight analyst console at `/`
+- Automated unit/API/e2e-oriented tests
+- GitHub Actions CI and Railway Docker deployment
+- Operations runbook and security architecture documentation
 
-## Planned pipeline
+## Quick start
 
-`Ingestion → Normalization → Correlation → Evidence → Enrichment → ATT&CK → AI Investigation → Validation → Analyst Decision`
+```bash
+cd backend
+python -m pip install -e '.[test]'
+pytest -q
+uvicorn app.main:app --reload
+```
 
-## Status
+Open `http://localhost:8000/` for the console or `/docs` for OpenAPI.
 
-Phase 1 complete. Phase 2 will implement the common event schema and synthetic security telemetry.
+### Run the demonstration
+
+```text
+POST /api/v1/demo/seed
+GET  /api/v1/investigations
+POST /api/v1/investigations/{investigation_id}/decision?decision=escalate&analyst=analyst
+```
+
+The synthetic scenario models login → Word/PowerShell → encoded command → external connection → scheduled task. No real malicious payloads are used.
+
+## Safety boundary
+
+AI output is advisory and validated. It cannot independently isolate hosts, terminate processes, delete files, disable accounts, block IPs, or perform other containment actions. Response requires explicit analyst/policy authorization.
+
+## Production configuration
+
+Set `DATABASE_URL` to managed PostgreSQL in Railway. Secrets/API keys must be stored as platform secrets and never committed. Real threat-intelligence and LLM providers should implement adapters behind the existing normalized contracts.
+
+## Roadmap status
+
+- [x] Phase 1 — Foundation & Deployment
+- [x] Phase 2 — Common Event Schema
+- [x] Phase 3 — Alert Ingestion
+- [x] Phase 4 — Detection & Correlation
+- [x] Phase 5 — Investigation Timeline
+- [x] Phase 6 — Threat Intelligence adapter
+- [x] Phase 7 — MITRE ATT&CK mapping
+- [x] Phase 8 — Bounded AI investigation contract
+- [x] Phase 9 — Analyst Console MVP
+- [x] Phase 10 — Evaluation baseline
+- [x] Phase 11 — Production deployment foundation
+- [x] Phase 12 — Portfolio Demonstrator MVP
+
+See `docs/operations.md` and the project issue for implementation tracking.
