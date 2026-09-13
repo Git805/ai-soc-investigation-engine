@@ -3,6 +3,7 @@ from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
+from app.schemas.network import NetworkEventData
 
 
 class EventType(StrEnum):
@@ -67,5 +68,6 @@ class SecurityEvent(BaseModel):
     user: User | None = None
     process: Process | None = None
     parent_process: ParentProcess | None = None
+    network: NetworkEventData | None = None
     source: Source
     data: dict[str, Any] = Field(default_factory=dict)
