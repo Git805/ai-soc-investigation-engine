@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any
+from typing import Any, Callable
 
 from app.schemas.event import SecurityEvent
 
@@ -32,11 +32,21 @@ class Investigation:
 
 
 def _process_name(event: SecurityEvent) -> str:
-    return (event.process.name if event.process else "").lower()
+    if not event.process or not event.process.name:
+        return ""
+    return event.process.name.lower()
 
 
 def _command(event: SecurityEvent) -> str:
-    return (event.process.command_line if event.process else "").lower()
+    if not event.process or not event.process.command_line:
+        return ""
+    return event.process.command_line.lower()
+
+
+def _parent_process_name(event: SecurityEvent) -> str:
+    if not event.parent_process or not event.parent_process.name:
+        return ""
+    return event.parent_process.name.lower()
 
 
 def _within_window(events: list[SecurityEvent]) -> list[list[SecurityEvent]]:
@@ -61,14 +71,17 @@ def _within_window(events: list[SecurityEvent]) -> list[list[SecurityEvent]]:
 def _evaluate_rules(events: list[SecurityEvent]) -> list[RuleHit]:
     hits: list[RuleHit] = []
 
-    def refs(predicate) -> list[str]:
+    def refs(predicate: Callable[[SecurityEvent], bool]) -> list[str]:
         return [event.event_id for event in events if predicate(event)]
 
     ps = refs(lambda e: e.event_type.value == "process_creation" and _process_name(e) in {"powershell.exe", "pwsh.exe"})
     if ps:
         hits.append(RuleHit("DET-001", "PowerShell execution", 25, ps))
 
-    encoded = refs(lambda e: e.event_type.value == "process_creation" and any(token in _command(e) for token in ("-enc", "-encodedcommand")))
+    encoded = refs(
+        lambda e: e.event_type.value == "process_creation"
+        and any(token in _command(e) for token in ("-enc", "-encodedcommand"))
+    )
     if encoded:
         hits.append(RuleHit("DET-002", "Encoded PowerShell command", 25, encoded))
 
@@ -80,11 +93,18 @@ def _evaluate_rules(events: list[SecurityEvent]) -> list[RuleHit]:
     if scheduled:
         hits.append(RuleHit("DET-004", "Scheduled task creation", 15, scheduled))
 
-    office_child = refs(lambda e: e.event_type.value == "process_creation" and _process_name(e) in {"powershell.exe", "pwsh.exe"} and e.parent_process and e.parent_process.name.lower() in {"winword.exe", "excel.exe", "outlook.exe"})
+    office_child = refs(
+        lambda e: e.event_type.value == "process_creation"
+        and _process_name(e) in {"powershell.exe", "pwsh.exe"}
+        and _parent_process_name(e) in {"winword.exe", "excel.exe", "outlook.exe"}
+    )
     if office_child:
         hits.append(RuleHit("DET-005", "Office application spawned PowerShell", 20, office_child))
 
-    failed_auth = refs(lambda e: e.event_type.value in {"authentication", "logon"} and str(e.data.get("result", "")).lower() in {"failure", "failed", "denied"})
+    failed_auth = refs(
+        lambda e: e.event_type.value in {"authentication", "logon"}
+        and str(e.data.get("result", "")).lower() in {"failure", "failed", "denied"}
+    )
     if len(failed_auth) >= 5:
         hits.append(RuleHit("DET-006", "Repeated authentication failures", 20, failed_auth))
 
@@ -115,7 +135,7 @@ def correlate(events: list[SecurityEvent]) -> list[Investigation]:
             missing = []
             if not any(event.event_type.value == "network_connection" for event in group):
                 missing.append("network telemetry")
-            if not any(event.event_type.value == "authentication" or event.event_type.value == "logon" for event in group):
+            if not any(event.event_type.value in {"authentication", "logon"} for event in group):
                 missing.append("authentication telemetry")
 
             if score >= 70:
