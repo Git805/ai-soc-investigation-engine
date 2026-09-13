@@ -11,6 +11,7 @@ from app.schemas.event import SecurityEvent
 
 IP_RE = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 DOMAIN_RE = re.compile(r"\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[A-Za-z]{2,63}\b")
+NON_DOMAIN_SUFFIXES = {"exe", "dll", "sys", "bat", "cmd", "ps1", "com"}
 
 
 @dataclass(frozen=True)
@@ -66,6 +67,11 @@ def _indicator_type(value: str) -> str:
     return "ip" if _is_ip(value) else "domain"
 
 
+def _is_domain_candidate(value: str) -> bool:
+    suffix = value.rsplit(".", 1)[-1].lower()
+    return suffix not in NON_DOMAIN_SUFFIXES
+
+
 def extract_indicators(events: list[SecurityEvent]) -> list[dict[str, Any]]:
     found: dict[str, set[str]] = {}
     for event in events:
@@ -82,7 +88,11 @@ def extract_indicators(events: list[SecurityEvent]) -> list[dict[str, Any]]:
             )
         if event.process and event.process.command_line:
             values.extend(IP_RE.findall(event.process.command_line))
-            values.extend(DOMAIN_RE.findall(event.process.command_line))
+            values.extend(
+                value
+                for value in DOMAIN_RE.findall(event.process.command_line)
+                if _is_domain_candidate(value)
+            )
         for value in values:
             normalized = value.strip().lower()
             if normalized:
