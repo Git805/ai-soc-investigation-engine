@@ -16,3 +16,8 @@ htmlcov/
 .DS_Store
 .idea/
 .vscode/
+
+
+
+# Runtime SQLite database
+*.db
