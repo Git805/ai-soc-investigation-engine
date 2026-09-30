@@ -33,7 +33,14 @@ def test_evidence_ledger_and_timeline_are_provenance_linked() -> None:
         assert client.post("/api/v1/events", json=event).status_code == 201
 
     investigations = client.get("/api/v1/investigations").json()
-    investigation = next(item for item in investigations if first in {e["event_id"] for e in item["timeline"]})
+
+    # Select the investigation containing both events created by this test.
+    # Do not rely on the first timeline entry because the investigation may
+    # already contain older events.
+    investigation = next(
+        item for item in investigations
+        if {first, second}.issubset({e["event_id"] for e in item["timeline"]})
+    )
 
     evidence = client.get(f"/api/v1/investigations/{investigation['investigation_id']}/evidence")
     assert evidence.status_code == 200
@@ -45,8 +52,27 @@ def test_evidence_ledger_and_timeline_are_provenance_linked() -> None:
 
     timeline = client.get(f"/api/v1/investigations/{investigation['investigation_id']}/timeline")
     assert timeline.status_code == 200
-    assert timeline.json()["events"][0]["event_id"] == first
-    assert timeline.json()["events"][1]["event_id"] == second
+
+    timeline_events = timeline.json()["events"]
+    timeline_ids = [event["event_id"] for event in timeline_events]
+
+    # Both events created by this test must be present and provenance-linked.
+    assert first in timeline_ids
+    assert second in timeline_ids
+
+    # Timeline must remain chronologically ordered.
+    timestamps = [event["timestamp"] for event in timeline_events]
+    assert timestamps == sorted(timestamps)
+    timeline_events = timeline.json()["events"]
+    timeline_ids = [event["event_id"] for event in timeline_events]
+
+    # Both events created by this test must be present.
+    assert first in timeline_ids
+    assert second in timeline_ids
+
+    # Timeline must be chronologically ordered.
+    timestamps = [event["timestamp"] for event in timeline_events]
+    assert timestamps == sorted(timestamps)
 
 
 def test_unknown_investigation_returns_404() -> None:

@@ -1,11 +1,13 @@
 from fastapi.testclient import TestClient
+import uuid
 
 from app.main import app
 
 client = TestClient(app)
+EVENT_CREATE_ID = f"evt-api-test-{uuid.uuid4().hex}"
 
 
-def payload(event_id: str = "evt-api-001") -> dict:
+def payload(event_id: str = "evt-create-test-001") -> dict:
     return {
         "event_id": event_id,
         "timestamp": "2026-09-13T10:15:30Z",
@@ -19,11 +21,13 @@ def payload(event_id: str = "evt-api-001") -> dict:
 
 
 def test_create_and_retrieve_event():
-    response = client.post("/api/v1/events", json=payload())
-    assert response.status_code == 201
-    assert response.json()["event_id"] == "evt-api-001"
+    event_id = f"evt-api-{uuid.uuid4().hex}"
 
-    fetched = client.get("/api/v1/events/evt-api-001")
+    response = client.post("/api/v1/events", json=payload(event_id))
+    assert response.status_code == 201
+    assert response.json()["event_id"] == event_id
+
+    fetched = client.get(f"/api/v1/events/{event_id}")
     assert fetched.status_code == 200
     assert fetched.json()["process"]["name"] == "powershell.exe"
 

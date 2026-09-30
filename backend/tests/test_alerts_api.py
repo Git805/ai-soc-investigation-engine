@@ -1,11 +1,13 @@
 from fastapi.testclient import TestClient
+import uuid
 
 from app.main import app
 
 client = TestClient(app)
+ALERT_CREATE_ID = f"alert-api-test-{uuid.uuid4().hex}"
 
 
-def payload(alert_id: str = "alert-api-001") -> dict:
+def payload(alert_id: str = "alert-create-test-001") -> dict:
     return {
         "alert_id": alert_id,
         "timestamp": "2026-09-13T10:15:30Z",
@@ -19,13 +21,15 @@ def payload(alert_id: str = "alert-api-001") -> dict:
 
 
 def test_create_and_retrieve_alert_from_collection():
-    response = client.post("/api/v1/alerts", json=payload())
+    alert_id = f"alert-api-{uuid.uuid4().hex}"
+
+    response = client.post("/api/v1/alerts", json=payload(alert_id))
     assert response.status_code == 201
-    assert response.json()["alert_id"] == "alert-api-001"
+    assert response.json()["alert_id"] == alert_id
 
     listed = client.get("/api/v1/alerts")
     assert listed.status_code == 200
-    assert any(item["alert_id"] == "alert-api-001" for item in listed.json())
+    assert any(item["alert_id"] == alert_id for item in listed.json())
 
 
 def test_duplicate_alert_is_rejected():
